@@ -1,0 +1,1 @@
+"""Recintos y distribución física."""
