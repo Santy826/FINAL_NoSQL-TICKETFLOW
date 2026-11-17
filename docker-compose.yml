@@ -12,6 +12,7 @@ services:
       - redis
     volumes:
       - ./backend:/app
+      - ./scripts:/app/scripts
 
   frontend:
     build:

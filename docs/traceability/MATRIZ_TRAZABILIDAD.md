@@ -1,9 +1,12 @@
-# Matriz de trazabilidad
+# Matriz de Trazabilidad — Proyecto TicketFlow
 
-| Requisito | Endpoint o módulo | Prueba | Evidencia | Responsable | Estado |
+| Requisito | Endpoint o Módulo | Prueba Asociada | Evidencia | Responsable | Estado |
 |---|---|---|---|---|---|
-| RF-01 a RF-04 | Pendiente | Pendiente | Pendiente | Integrante 1 | Pendiente |
-| RF-05 a RF-07 | Pendiente | Pendiente | Pendiente | Integrante 2 | Pendiente |
-| RF-08 a RF-11 | Pendiente | Pendiente | Pendiente | Integrante 3 | Pendiente |
-| RF-12 a RF-13 | Pendiente | Pendiente | Pendiente | Integrante 4 | Pendiente |
-| RNF | Pendiente | Pendiente | Pendiente | Todos | Pendiente |
+| **RF-01** | `POST /api/v1/venues`<br>`GET /api/v1/venues`<br>`GET /api/v1/venues/{id}`<br>`PATCH /api/v1/venues/{id}`<br>`DELETE /api/v1/venues/{id}` | PRU-V01, PRU-V02, PRU-V03 (Teatro, Estadio, Sala de comedia)<br>PRU-V04 (Secciones duplicadas)<br>PRU-V05 (Capacidad negativa)<br>PRU-V06 (Control de rol)<br>PRU-V07 (Recinto inexistente) | `E01_recinto_teatro.png`<br>`E01_recinto_estadio.png`<br>`E01_recinto_comedia.png`<br>`E04_permiso_denegado.png`<br>`E06_datos_invalidos.png` | Integrante 1 | **Implementado y Probado** |
+| **RF-02** | `POST /api/v1/events`<br>`GET /api/v1/events`<br>`GET /api/v1/events/{id}`<br>`PATCH /api/v1/events/{id}`<br>`PATCH /api/v1/events/{id}/cancel`<br>`POST /api/v1/events/{id}/shows` | PRU-E01 (Evento con funciones y precios)<br>PRU-E02 (Organizador inexistente)<br>PRU-E03 (Sección y precio inválidos)<br>PRU-E04 (Restricción de edad negativa)<br>PRU-E05 (Cancelación de evento)<br>PRU-E06 (Filtros de búsqueda) | `E02_evento_funciones_precios.png`<br>`E05_documentos_mongodb.png`<br>`E06_datos_invalidos.png`<br>`E07_swagger_endpoints.png` | Integrante 1 | **Implementado y Probado** |
+| **RF-03** | `POST /api/v1/organizers`<br>`GET /api/v1/organizers`<br>`GET /api/v1/organizers/{id}`<br>`PATCH /api/v1/organizers/{id}`<br>`DELETE /api/v1/organizers/{id}`<br>`GET /api/v1/organizers/{id}/events` | PRU-O01 (Creación con comisión y política)<br>PRU-O02 (NIT duplicado 409)<br>PRU-O03 (Comisión fuera de rango)<br>PRU-O04 (Acceso no admin 403)<br>PRU-O05 (Organizador inexistente 404) | `E04_permiso_denegado.png`<br>`E05_documentos_mongodb.png`<br>`E06_datos_invalidos.png` | Integrante 1 | **Implementado y Probado** |
+| **RF-04** | `POST /api/v1/auth/register`<br>`POST /api/v1/auth/login`<br>`POST /api/v1/auth/logout`<br>Manejo de sesiones en Redis | PRU-A01 (Registro de usuario con hash)<br>PRU-A02 (Correo duplicado 409)<br>PRU-A03 (Validación Pydantic 422)<br>PRU-A04 (Login y sesión en Redis)<br>PRU-A05 (Credenciales erróneas 401)<br>PRU-A06 (Logout y borrado de sesión) | `E03_registro_login_sesion.png`<br>`E04_permiso_denegado.png`<br>`E05_documentos_mongodb.png`<br>`E06_datos_invalidos.png` | Integrante 1 | **Implementado y Probado** |
+| **RF-05 a RF-07** | Disponibilidad, Reservas y Concurrencia Redis | Pendiente | E08 a E14 | Integrante 2 | Pendiente |
+| **RF-08 a RF-11** | Órdenes, Boletas, Validación y Devoluciones | Pendiente | E15 a E24 | Integrante 3 | Pendiente |
+| **RF-12 a RF-13** | Alertas y Reportes R-01 a R-13 | Pendiente | E25 a E31 | Integrante 4 | Pendiente |
+| **RNF** | Consistencia, Rendimiento < 200 ms, Seguridad (Hash/JWT/RBAC), Docker Compose, OpenAPI | Pruebas de integración, pytest y k6 | E35 a E38 | Todos | En progreso (RNF de Auth/RBAC/Docker/OpenAPI listos en backend) |

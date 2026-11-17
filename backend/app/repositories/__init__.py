@@ -1,1 +1,1 @@
-"""Acceso a datos y consultas MongoDB."""
+"""Repositorios de acceso a MongoDB."""

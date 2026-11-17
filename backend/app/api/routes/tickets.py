@@ -1,1 +1,3 @@
-"""Emisión y validación de boletas."""
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/api/v1/tickets", tags=["Boletas"])

@@ -1,1 +1,3 @@
-"""Reportes de ventas, ocupación, fraude y asistencia."""
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/api/v1/reports", tags=["Reportes"])

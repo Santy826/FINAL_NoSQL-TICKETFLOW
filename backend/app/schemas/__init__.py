@@ -1,1 +1,1 @@
-"""Esquemas Pydantic de entrada y salida."""
+"""Schemas Pydantic del dominio."""

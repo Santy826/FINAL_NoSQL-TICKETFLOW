@@ -1,1 +1,1 @@
-"""Lógica de negocio de TicketFlow."""
+"""Servicios de lógica de negocio."""
