@@ -8,8 +8,27 @@ services:
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
-      - mongodb
-      - redis
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+      - ./scripts:/app/scripts
+
+  api-2:
+    build:
+      context: ./backend
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "${API_2_PORT:-8001}:8000"
+    depends_on:
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_started
     volumes:
       - ./backend:/app
       - ./scripts:/app/scripts
@@ -39,6 +58,18 @@ services:
     volumes:
       - redis_data:/data
 
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ticketflow_compare
+      POSTGRES_USER: ticketflow
+      POSTGRES_PASSWORD: ticketflow
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
 volumes:
   mongodb_data:
   redis_data:
+  postgres_data:

@@ -135,3 +135,35 @@ Implementados en `app/core/database.py` e inicializados en el lifespan de FastAP
 | `boletas` | `(funcionId, silla)` | `unique: true, partialFilterExpression: {estado: 'valida'}` | Segunda barrera de seguridad de BD contra la doble venta. |
 | `boletas` | `codigo` | `unique: true` | Validación rápida y sin colisiones en el control de acceso. |
 | `validaciones` | `(boletaId, fecha)` | Compuesto | Auditoría cronológica de accesos e intentos de fraude. |
+
+## 7. Reservas y disponibilidad (RF-05 a RF-07)
+
+La colección `reservas` conserva la fuente de verdad de cada reserva
+temporal. Las sillas numeradas se identifican con el formato
+`SECCION-FILA-NUMERO`; las zonas generales usan `seccion` y `cantidad`.
+Una reserva activa tiene una vigencia de 10 minutos y se consulta junto con
+su fecha `expiraEn`, de modo que una clave Redis vencida no deje una reserva
+disponible incorrectamente.
+
+```json
+{
+  "_id": "res_7f31a2c0",
+  "funcionId": "fn_rock_01",
+  "usuarioId": "usr_carlos_01",
+  "items": [
+    { "seccion": "PLATEA", "silla": "PLATEA-A-12", "cantidad": 1 }
+  ],
+  "estado": "activa",
+  "creadaEn": "2026-11-24T10:00:00+00:00",
+  "expiraEn": "2026-11-24T10:10:00+00:00"
+}
+```
+
+Redis actúa como barrera rápida y distribuida. Se usa
+`lock:silla:{funcionId}:{silla}` con `SET NX EX 600` para impedir la doble
+reserva, `reserva:{reservaId}` para el TTL de la reserva y
+`cupo:{funcionId}:{seccion}` con scripts Lua atómicos para zonas generales.
+Las operaciones Lua inicializan, decrementan y restauran el contador dentro
+de una sola operación Redis. MongoDB mantiene la reserva y sus estados como
+guardarraíl definitivo, y el trabajador de expiración sincroniza los recursos
+cuando vence el plazo de 10 minutos.

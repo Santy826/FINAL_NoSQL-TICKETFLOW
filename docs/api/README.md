@@ -162,3 +162,51 @@ Endpoints implementados por el **Integrante 1**. Todos los endpoints tienen como
 ### `PATCH /api/v1/events/{id}/cancel`
 * **Permiso:** `organizador` o `administrador`
 * **Respuesta (200 OK):** Actualiza el estado a `"cancelado"`.
+
+## 5. Disponibilidad y reservas (Integrante 2)
+
+### `GET /api/v1/shows/{funcionId}/availability`
+Retorna las secciones de la función con capacidad, cupos disponibles y
+estados `libre`, `reservada` o `vendida` para puestos numerados.
+
+### `GET /api/v1/shows/{funcionId}/seats`
+Retorna las sillas numeradas y el resumen de zonas generales.
+
+### `POST /api/v1/reservations`
+Requiere autenticación. Recibe `funcionId` e `items`, donde cada silla
+numerada se indica como `seccion`, `silla` y `cantidad: 1`; una zona general
+se indica con `seccion` y `cantidad`.
+
+```json
+{
+  "funcionId": "fn_rock_01",
+  "items": [
+    { "seccion": "PLATEA", "silla": "PLATEA-A-12", "cantidad": 1 }
+  ]
+}
+```
+
+La respuesta es `201 Created` y contiene `estado: "activa"` y `expiraEn`
+diez minutos después de `creadaEn`. Redis crea el bloqueo atómico
+`lock:silla:{funcionId}:{silla}` con TTL de 600 segundos.
+
+### `GET /api/v1/reservations/{id}` y `DELETE /api/v1/reservations/{id}`
+Requieren autenticación y solo permiten consultar o cancelar la reserva de su
+propietario. La cancelación libera los bloqueos y restaura el cupo general.
+
+Las reservas activas vencen a los 10 minutos. Un trabajador periódico también
+marca reservas expiradas en MongoDB y libera sus recursos; la clave Redis expira
+el bloqueo aunque la API se reinicie.
+
+## 6. Concurrencia y limitación
+
+Redis conserva los bloqueos compartidos por las dos instancias de API:
+
+- `lock:silla:{funcionId}:{silla}` con `SET NX EX 600`;
+- `cupo:{funcionId}:{seccion}` con un script Lua atómico para reservar y restaurar cupos;
+- `reserva:{reservaId}` con TTL de 600 segundos;
+- `ratelimit:{ip}:{ruta}` con una ventana configurable de 60 segundos.
+
+Al exceder `RATE_LIMIT_REQUESTS`, la API responde `429 Too Many Requests` y
+`Retry-After`. Redis es la barrera rápida distribuida; MongoDB conserva el
+estado definitivo y las reservas vencidas.

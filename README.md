@@ -5,9 +5,11 @@ MongoDB y Redis.
 
 ## Estado del proyecto
 
-Este repositorio contiene el esqueleto inicial. La estructura está preparada
-para implementar progresivamente los módulos definidos en
-`DISTRIBUCION_TAREAS_TICKETFLOW.txt`; todavía no contiene lógica de negocio.
+El proyecto incluye la base funcional de FastAPI, MongoDB y Redis. El módulo
+del Integrante 1 está implementado y el módulo del Integrante 2 incluye
+disponibilidad, reservas temporales, concurrencia Redis y limitación de
+solicitudes. Los módulos de los Integrantes 3 y 4 continúan según
+`DISTRIBUCION_TAREAS_TICKETFLOW.txt`.
 
 ## Estructura
 
@@ -17,12 +19,13 @@ para implementar progresivamente los módulos definidos en
 - `scripts/`: datos de demostración y utilidades futuras.
 - `tests/`: pruebas de integración y rendimiento.
 
-## Inicio previsto
+## Inicio
 
 1. Copiar `.env.example` a `.env`.
 2. Ejecutar `docker compose up --build`.
-3. Implementar los módulos siguiendo la distribución de tareas y actualizar
-   la matriz de trazabilidad.
+3. Cargar datos de demostración con
+   `docker compose exec api python scripts/seed.py`.
+4. Ejecutar pruebas con `docker compose exec api pytest -q`.
 
 ## Reglas iniciales
 

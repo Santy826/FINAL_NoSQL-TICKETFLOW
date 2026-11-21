@@ -1,4 +1,6 @@
+import asyncio
 from contextlib import asynccontextmanager
+
 import redis
 from pymongo import MongoClient
 
@@ -67,6 +69,17 @@ def create_indexes():
     )
     db.boletas.create_index("codigo", unique=True)
     db.validaciones.create_index([("boletaId", 1), ("fecha", -1)])
+    db.reservas.create_index([("funcionId", 1), ("estado", 1), ("expiraEn", 1)])
+    db.reservas.create_index([("usuarioId", 1), ("creadaEn", -1)])
+
+
+async def _reservation_expiration_worker():
+    from app.services.reservation_service import expire_active_reservations
+
+    while True:
+        await asyncio.sleep(5)
+        if db is not None and redis_client is not None:
+            await asyncio.to_thread(expire_active_reservations, db, redis_client)
 
 
 @asynccontextmanager
@@ -74,6 +87,9 @@ async def lifespan(app):
     connect_mongo()
     connect_redis()
     create_indexes()
+    worker = asyncio.create_task(_reservation_expiration_worker())
     yield
+    worker.cancel()
+    await asyncio.gather(worker, return_exceptions=True)
     close_redis()
     close_mongo()
