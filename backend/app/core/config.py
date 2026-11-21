@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     JWT_EXPIRE_MINUTES: int = 60
 
     SESSION_TTL_SECONDS: int = 1800
+    RATE_LIMIT_REQUESTS: int = 100
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
