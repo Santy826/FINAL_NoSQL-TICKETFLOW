@@ -21,7 +21,7 @@ class ReservationOut(BaseModel):
     funcionId: str
     usuarioId: str
     items: list[dict]
-    estado: Literal["activa", "cancelada", "expirada"]
+    estado: Literal["activa", "pagada", "cancelada", "expirada"]
     creadaEn: str
     expiraEn: str
 
