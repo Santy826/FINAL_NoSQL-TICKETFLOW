@@ -13,8 +13,10 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "change-me-for-local-development"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60
+    TICKET_HMAC_SECRET: str = "change-ticket-hmac-for-local-development"
 
     SESSION_TTL_SECONDS: int = 1800
+    IDEMPOTENCY_TTL_SECONDS: int = 86400
     RATE_LIMIT_REQUESTS: int = 100
     RATE_LIMIT_WINDOW_SECONDS: int = 60
 
