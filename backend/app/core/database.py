@@ -62,15 +62,28 @@ def create_indexes():
     )
     db.ordenes.create_index([("compradorId", 1), ("fechaCreacion", -1)])
     db.ordenes.create_index([("funcionId", 1), ("estado", 1)])
+    try:
+        db.boletas.drop_index("funcionId_1_silla_1")
+    except Exception:
+        pass
     db.boletas.create_index(
         [("funcionId", 1), ("silla", 1)],
         unique=True,
-        partialFilterExpression={"estado": "valida"},
+        partialFilterExpression={
+            "estado": {"$in": ["valida", "usada"]},
+            "silla": {"$type": "string"},
+        },
     )
     db.boletas.create_index("codigo", unique=True)
     db.validaciones.create_index([("boletaId", 1), ("fecha", -1)])
     db.reservas.create_index([("funcionId", 1), ("estado", 1), ("expiraEn", 1)])
     db.reservas.create_index([("usuarioId", 1), ("creadaEn", -1)])
+    db.lotes.create_index([("funcionId", 1), ("estado", 1), ("creadoEn", -1)])
+    db.lotes.create_index([("organizadorId", 1), ("creadoEn", -1)])
+    db.facturas.create_index("loteId", unique=True)
+    db.facturas.create_index([("organizadorId", 1), ("fechaEmision", -1)])
+    db.devoluciones.create_index([("compradorId", 1), ("solicitadaEn", -1)])
+    db.devoluciones.create_index([("boletaId", 1), ("estado", 1)])
 
 
 async def _reservation_expiration_worker():
