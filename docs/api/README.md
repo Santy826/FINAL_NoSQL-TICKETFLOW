@@ -198,7 +198,151 @@ Las reservas activas vencen a los 10 minutos. Un trabajador periódico también
 marca reservas expiradas en MongoDB y libera sus recursos; la clave Redis expira
 el bloqueo aunque la API se reinicie.
 
-## 6. Concurrencia y limitación
+## 6. Órdenes y pagos simulados
+
+### `POST /api/v1/orders`
+
+Requiere autenticación con rol `comprador` o `administrador`. Confirma el pago
+simulado de una reserva activa y devuelve `201 Created`. El primer pago crea una
+orden; repetir exactamente la misma petición devuelve `200 OK` con la misma
+orden.
+
+```json
+{
+  "reservaId": "res_412de009",
+  "idempotencyKey": "e15-payment-001",
+  "metodoPago": "simulado"
+}
+```
+
+La clave de idempotencia se conserva en Redis como `idem:{clave}` durante
+24 horas y también existe como índice único en MongoDB. Una reserva vencida,
+pagada, inexistente o ajena al usuario devuelve un conflicto o error apropiado.
+
+### `GET /api/v1/orders/{id}`
+
+Permite consultar una orden al comprador propietario o a un administrador.
+
+### `GET /api/v1/users/{id}/orders`
+
+Permite al comprador consultar sus propias órdenes y al administrador consultar
+las órdenes de cualquier usuario.
+
+## 7. Boletas y validación de acceso
+
+Después de confirmar el pago se generan automáticamente boletas firmadas. Una
+silla numerada genera una boleta; una zona general genera una boleta por cada
+cupo comprado.
+
+Cada boleta incluye:
+
+- `_id`;
+- código aleatorio firmado con HMAC-SHA256;
+- código QR almacenado como contenido o imagen codificada;
+- orden, comprador, función, sección y silla;
+- estado `valida`, `usada`, `devuelta` o `anulada`.
+
+Endpoints disponibles:
+
+- `GET /api/v1/tickets/{id}`;
+- `GET /api/v1/tickets/mine`;
+- `POST /api/v1/tickets/validate`.
+
+La validación requiere rol `validador` o `administrador`.
+
+```json
+{
+  "codigo": "bol_xxxxxxxx.signature",
+  "puerta": "Puerta Norte"
+}
+```
+
+Una validación exitosa cambia la boleta a `usada` de forma atómica y registra
+un documento en `validaciones`. Los intentos alterados, repetidos, devueltos o
+anulados también quedan registrados.
+
+Redis protege cada entrada con `lock:validacion:{boletaId}` durante cinco
+segundos. MongoDB realiza el cambio final `valida -> usada` para que solo una
+validación concurrente pueda tener éxito.
+
+## 8. Lotes y facturas
+
+### `POST /api/v1/batches`
+
+Requiere rol `organizador` o `administrador`.
+
+Tipos admitidos:
+
+- `preventa`;
+- `ampliacion`;
+- `nueva_seccion`;
+- `nueva_funcion`.
+
+Ejemplo para ampliar una zona general:
+
+```json
+{
+  "tipo": "ampliacion",
+  "funcionId": "fn_rock_01",
+  "seccion": "ORIENTAL",
+  "cantidad": 100,
+  "precio": 80000
+}
+```
+
+La creación registra el lote en `lotes`, actualiza la capacidad general del
+recinto o crea la función solicitada, sincroniza Redis y genera una factura
+única en `facturas`.
+
+### `GET /api/v1/invoices`
+
+Retorna las facturas emitidas. Un administrador puede ver todas; un organizador
+solo puede consultar las facturas asociadas a su organizador.
+
+## 9. Devoluciones
+
+### `POST /api/v1/refunds`
+
+Permite al comprador solicitar la devolución de una de sus boletas válidas.
+
+```json
+{
+  "boletaId": "bol_xxxxxxxx",
+  "tipo": "reembolso",
+  "motivo": "No podré asistir"
+}
+```
+
+Para cambio de función se agrega `nuevaFuncionId`.
+
+La solicitud valida:
+
+- que la boleta exista y pertenezca al usuario;
+- que esté en estado `valida`;
+- que no exista una solicitud pendiente;
+- la política `sin_devolucion` o `hasta_48h_antes` del organizador.
+
+### `PATCH /api/v1/refunds/{id}/approve`
+
+Aprueba una devolución pendiente. Al aprobar:
+
+- la boleta pasa a `devuelta`;
+- se libera el bloqueo Redis de silla si existe;
+- se devuelve el cupo general en Redis;
+- la orden pasa a `reembolsada`;
+- se registra quién aprobó y cuándo.
+
+### `PATCH /api/v1/refunds/{id}/reject`
+
+Rechaza una devolución pendiente sin cambiar la boleta ni liberar inventario.
+
+```json
+{
+  "motivo": "La solicitud excedió el plazo permitido"
+}
+```
+
+## 10. Concurrencia y limitación
 
 Redis conserva los bloqueos compartidos por las dos instancias de API:
 
