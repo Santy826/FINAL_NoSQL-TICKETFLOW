@@ -244,6 +244,11 @@ def approve(db, redis_cli, refund_id: str, user: dict) -> dict:
         {"_id": refund["ordenId"]},
         {"$set": {"estado": "reembolsada"}},
     )
+    try:
+        from app.services.report_service import invalidate
+        invalidate(db, redis_cli)
+    except Exception:
+        pass
 
     if refund["tipo"] == "cambio_funcion":
         new_show_id = refund.get("nuevaFuncionId")

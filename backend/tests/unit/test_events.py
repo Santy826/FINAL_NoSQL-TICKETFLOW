@@ -93,6 +93,54 @@ def test_crear_evento_seccion_invalida_error(client, mock_db, org_user):
     assert response.status_code == 422
 
 
+def test_crear_evento_ciudad_distinta_recinto_error(client, mock_db, org_user):
+    app.dependency_overrides[get_current_user] = lambda: org_user
+
+    mock_db.organizadores.find_one.return_value = {"_id": "org_01"}
+    mock_db.recintos.find_one.return_value = {
+        "_id": "rec_01",
+        "ciudad": "Cali",
+        "secciones": [{"codigo": "GENERAL"}],
+    }
+
+    payload = {
+        "nombre": "Concierto",
+        "categoria": "musica",
+        "organizadorId": "org_01",
+        "funciones": [{
+            "fechaHora": "2027-04-10T20:00:00-05:00",
+            "recintoId": "rec_01",
+            "ciudad": "Bogotá",
+            "precios": {"GENERAL": 50000},
+        }],
+    }
+
+    response = client.post("/api/v1/events", json=payload)
+    assert response.status_code == 422
+
+
+def test_listar_publicados_no_omite_evento_sin_recinto(client, mock_db):
+    mock_db.eventos.find.return_value = [
+        {
+            "_id": "evt_publicado",
+            "nombre": "Evento publicado",
+            "estado": "publicado",
+            "funciones": [{
+                "funcionId": "fn_1",
+                "recintoId": "rec_inexistente",
+                "fechaHora": "2027-06-01T20:00:00-05:00",
+            }],
+        },
+    ]
+    mock_db.recintos.find_one.return_value = None
+
+    response = client.get("/api/v1/events?estado=publicado")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["nombre"] == "Evento publicado"
+
+
 def test_crear_evento_edad_negativa_error(client, org_user):
     app.dependency_overrides[get_current_user] = lambda: org_user
 

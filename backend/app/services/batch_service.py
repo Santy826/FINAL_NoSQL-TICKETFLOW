@@ -291,6 +291,12 @@ def create(db, redis_cli, user: dict, data: dict) -> dict:
     }
     created_invoice = batch_repo.insert_invoice(db, invoice)
 
+    try:
+        from app.services.report_service import invalidate
+        invalidate(db, redis_cli)
+    except Exception:
+        pass
+
     return {
         "lote": created_batch,
         "factura": created_invoice,

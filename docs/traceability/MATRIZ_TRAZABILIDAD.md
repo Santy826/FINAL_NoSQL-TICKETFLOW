@@ -11,5 +11,5 @@
 | **RF-07** | Bloqueos `SET NX` y cupos Lua/DECRBY en Redis | Concurrencia verificada manualmente con dos API: 1 éxito y 19 conflictos; k6 disponible para ejecución formal | E11_bloqueo_redis.png<br>E12_concurrencia_dos_instancias.png (pendientes) | Integrante 2 | **Implementado; falta captura y reporte k6 formal** |
 | **RNF-2** | Middleware Redis `ratelimit:{ip}:{ruta}` | 100 solicitudes aceptadas y 5 rechazadas con `429` en la ejecución local | E13_rate_limit.png (pendiente captura) | Integrante 2 | **Implementado y verificable; falta captura formal** |
 | **RF-08 a RF-11** | Órdenes, Boletas, Validación y Devoluciones | Pendiente | E15 a E24 | Integrante 3 | Pendiente |
-| **RF-12 a RF-13** | Alertas y Reportes R-01 a R-13 | Pendiente | E25 a E31 | Integrante 4 | Pendiente |
+| **RF-12 a RF-13** | Alertas y Reportes R-01 a R-13 | `backend/tests/unit/test_reports.py` cubre caché, hit/miss e invalidación; las 13 rutas están implementadas | E25 a E31 | Integrante 4 | **Implementado; faltan capturas manuales** |
 | **RNF** | Consistencia, Rendimiento < 200 ms, Seguridad (Hash/JWT/RBAC), Docker Compose, OpenAPI | Pruebas de integración, pytest y k6 | E35 a E38 | Todos | En progreso (RNF de Auth/RBAC/Docker/OpenAPI listos en backend) |

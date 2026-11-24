@@ -34,6 +34,11 @@ def get_my_tickets(db: DbDep, user: CurrentUser):
     return ticket_service.get_by_buyer(db, user["_id"], user)
 
 
+@router.get("/all")
+def get_all_tickets(db: DbDep, user: CurrentUser):
+    return ticket_service.get_all(db, user)
+
+
 @router.get("/{ticket_id}")
 def get_ticket(ticket_id: str, db: DbDep, user: CurrentUser):
     return ticket_service.get(db, ticket_id, user)

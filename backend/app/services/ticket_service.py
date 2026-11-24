@@ -105,7 +105,56 @@ def get(db, ticket_id: str, user: dict) -> dict:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Boleta no encontrada")
     if user["rol"] not in ("administrador", "validador") and ticket["compradorId"] != user["_id"]:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "La boleta pertenece a otro usuario")
-    return ticket
+    return _with_event_info(db, ticket)
+
+
+def _with_event_info(db, ticket: dict) -> dict:
+    enriched = dict(ticket)
+    funcion_id = ticket.get("funcionId")
+    enriched["eventoDisponible"] = False
+    enriched["eventoNombre"] = None
+    enriched["eventoId"] = None
+    enriched["eventoCategoria"] = None
+    enriched["eventoFechaHora"] = None
+    enriched["recintoId"] = None
+    enriched["recintoNombre"] = None
+    enriched["recintoCiudad"] = None
+
+    event_collection = getattr(db, "eventos", None)
+    if event_collection is None or not funcion_id:
+        return enriched
+
+    event = event_collection.find_one({"funciones.funcionId": funcion_id})
+    if not event:
+        return enriched
+
+    show = next(
+        (
+            funcion
+            for funcion in event.get("funciones", [])
+            if funcion.get("funcionId") == funcion_id
+        ),
+        None,
+    )
+    if not show:
+        return enriched
+
+    enriched["eventoDisponible"] = True
+    enriched["eventoNombre"] = event.get("nombre")
+    enriched["eventoId"] = event.get("_id")
+    enriched["eventoCategoria"] = event.get("categoria")
+    enriched["eventoFechaHora"] = show.get("fechaHora")
+    enriched["recintoId"] = show.get("recintoId")
+    enriched["recintoCiudad"] = show.get("ciudad")
+
+    venue_collection = getattr(db, "recintos", None)
+    if venue_collection is not None:
+        venue = venue_collection.find_one({"_id": show.get("recintoId")})
+        if venue:
+            enriched["recintoNombre"] = venue.get("nombre")
+            if not enriched["recintoCiudad"]:
+                enriched["recintoCiudad"] = venue.get("ciudad")
+    return enriched
 
 
 def get_by_buyer(db, buyer_id: str, user: dict) -> list[dict]:
@@ -114,7 +163,18 @@ def get_by_buyer(db, buyer_id: str, user: dict) -> list[dict]:
             status.HTTP_403_FORBIDDEN,
             "No puede consultar las boletas de otro usuario",
         )
-    return ticket_repo.find_by_buyer(db, buyer_id)
+    tickets = ticket_repo.find_by_buyer(db, buyer_id)
+    return [_with_event_info(db, ticket) for ticket in tickets]
+
+
+def get_all(db, user: dict) -> list[dict]:
+    if user["rol"] not in ("administrador", "validador"):
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "Solo administradores y validadores pueden consultar todas las boletas",
+        )
+    tickets = ticket_repo.find_all(db)
+    return [_with_event_info(db, ticket) for ticket in tickets]
 
 
 def _record_attempt(

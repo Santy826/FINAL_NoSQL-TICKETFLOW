@@ -32,3 +32,13 @@ solicitudes. Los módulos de los Integrantes 3 y 4 continúan según
 - No agregar secretos al repositorio.
 - Cada módulo debe incluir pruebas y documentación de sus endpoints.
 - Mantener la separación entre rutas, servicios, repositorios y modelos.
+
+## Integrante 4
+
+- Los reportes R-01 a R-13 están disponibles bajo `/api/v1/reports`.
+- Las respuestas incluyen el encabezado `X-Cache` con los valores `miss` o `hit`.
+- Los reportes usan caché Redis con TTL de 300 segundos y se invalidan después de reservas, pagos y devoluciones.
+- El frontend incluye mapa de sillas, carrito con temporizador, mis boletas y panel de reportes.
+- El frontend incluye un panel administrativo para crear recintos por escenario, organizadores y eventos con funciones.
+- También permite crear lotes/facturas, gestionar devoluciones y validar boletas desde la interfaz.
+- Swagger: <http://localhost:8000/docs>.

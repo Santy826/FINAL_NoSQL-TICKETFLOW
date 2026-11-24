@@ -18,6 +18,15 @@ def _validar_recintos_funciones(db, funciones: list[dict]):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Recinto '{func['recintoId']}' no encontrado",
             )
+        ciudad_recinto = recinto.get("ciudad")
+        if ciudad_recinto and func.get("ciudad") and func["ciudad"] != ciudad_recinto:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=(
+                    f"La función debe realizarse en la ciudad del recinto "
+                    f"('{ciudad_recinto}')"
+                ),
+            )
         codigos_recinto = {s["codigo"] for s in recinto.get("secciones", [])}
         codigos_precios = set(func.get("precios", {}).keys())
         invalidos = codigos_precios - codigos_recinto
@@ -48,7 +57,8 @@ def listar_eventos(
         filtros["estado"] = estado
     if ciudad:
         filtros["funciones.ciudad"] = ciudad
-    return event_repo.find_all(db, filtros)
+    events = event_repo.find_all(db, filtros)
+    return events
 
 
 def obtener_evento(db, event_id: str):
@@ -77,6 +87,16 @@ def cancelar_evento(db, event_id: str):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Evento no encontrado o ya cancelado",
+        )
+    return result
+
+
+def publicar_evento(db, event_id: str):
+    result = event_repo.update(db, event_id, {"estado": "publicado"})
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Evento no encontrado",
         )
     return result
 

@@ -29,7 +29,17 @@ class Collection:
 
     def find_one(self, query=None, *args, **kwargs):
         for doc in self.docs:
-            if all(doc.get(key) == value for key, value in (query or {}).items()):
+            if all(
+                (
+                    any(
+                        funcion.get("funcionId") == value
+                        for funcion in doc.get("funciones", [])
+                    )
+                    if key == "funciones.funcionId"
+                    else doc.get(key) == value
+                )
+                for key, value in (query or {}).items()
+            ):
                 return dict(doc)
         return None
 
@@ -80,6 +90,67 @@ def _validator():
         "_id": "usr_validator",
         "rol": "validador",
     }
+
+
+def test_mis_boletas_resuelve_evento_nombre_fecha_y_recinto():
+    db = DB()
+    db.eventos = Collection([{
+        "_id": "evt_rock",
+        "nombre": "Concierto Rock",
+        "categoria": "musica",
+        "funciones": [{
+            "funcionId": "fn_rock",
+            "fechaHora": "2027-02-14T19:00:00-05:00",
+            "recintoId": "rec_estadio",
+            "ciudad": "Cali",
+        }],
+    }])
+    db.recintos = Collection([{
+        "_id": "rec_estadio",
+        "nombre": "Estadio Principal",
+        "ciudad": "Cali",
+    }])
+    db.boletas.docs.append({
+        "_id": "bol_rock",
+        "compradorId": "usr_buyer",
+        "funcionId": "fn_rock",
+        "seccion": "NORTE",
+        "silla": "NORTE-1-1",
+        "estado": "valida",
+    })
+
+    result = ticket_service.get_by_buyer(
+        db,
+        "usr_buyer",
+        {"_id": "usr_buyer", "rol": "comprador"},
+    )
+
+    assert len(result) == 1
+    assert result[0]["eventoId"] == "evt_rock"
+    assert result[0]["eventoNombre"] == "Concierto Rock"
+    assert result[0]["eventoFechaHora"] == "2027-02-14T19:00:00-05:00"
+    assert result[0]["recintoNombre"] == "Estadio Principal"
+
+
+def test_mis_boletas_informa_evento_no_disponible_sin_relacion():
+    db = DB()
+    db.eventos = Collection([])
+    db.recintos = Collection([])
+    db.boletas.docs.append({
+        "_id": "bol_antigua",
+        "compradorId": "usr_buyer",
+        "funcionId": "fn_inexistente",
+        "estado": "valida",
+    })
+
+    result = ticket_service.get_by_buyer(
+        db,
+        "usr_buyer",
+        {"_id": "usr_buyer", "rol": "comprador"},
+    )
+
+    assert result[0]["eventoDisponible"] is False
+    assert result[0]["eventoNombre"] is None
 
 
 def test_emision_silla_genera_codigo_firmado_y_qr():
