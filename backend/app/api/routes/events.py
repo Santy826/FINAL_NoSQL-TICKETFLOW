@@ -54,6 +54,15 @@ def cancelar_evento(
     return event_service.cancelar_evento(db, event_id)
 
 
+@router.patch("/{event_id}/publish")
+def publicar_evento(
+    event_id: str,
+    db: DbDep,
+    _user=Depends(require_role("organizador", "administrador")),
+):
+    return event_service.publicar_evento(db, event_id)
+
+
 @router.post("/{event_id}/shows", status_code=status.HTTP_201_CREATED)
 def agregar_funciones(
     event_id: str,

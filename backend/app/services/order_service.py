@@ -207,6 +207,11 @@ def pay(db, redis_cli, user: dict, data: dict) -> tuple[dict, bool]:
                 existing["_id"],
                 ex=settings.IDEMPOTENCY_TTL_SECONDS,
             )
+            try:
+                from app.services.report_service import invalidate
+                invalidate(db, redis_cli)
+            except Exception:
+                pass
             return existing, False
 
         from app.services import ticket_service
@@ -217,6 +222,11 @@ def pay(db, redis_cli, user: dict, data: dict) -> tuple[dict, bool]:
             created["_id"],
             ex=settings.IDEMPOTENCY_TTL_SECONDS,
         )
+        try:
+            from app.services.report_service import invalidate
+            invalidate(db, redis_cli)
+        except Exception:
+            pass
         return created, True
     except HTTPException:
         if redis_cli.get(redis_key) == "processing":

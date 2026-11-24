@@ -275,6 +275,11 @@ def create(db, redis_cli, user_id: str, funcion_id: str, items: list[dict]) -> d
             json.dumps(reservation),
             ex=RESERVATION_TTL_SECONDS,
         )
+        try:
+            from app.services.report_service import invalidate
+            invalidate(db, redis_cli)
+        except Exception:
+            pass
         return reservation
     except Exception:
         for kind, key, amount in acquired:
@@ -352,6 +357,11 @@ def cancel(db, redis_cli, reservation_id: str, user_id: str) -> dict:
     if not updated:
         raise HTTPException(status.HTTP_409_CONFLICT, "La reserva ya no está activa")
     _release_reservation(db, redis_cli, updated)
+    try:
+        from app.services.report_service import invalidate
+        invalidate(db, redis_cli)
+    except Exception:
+        pass
     return updated
 
 
@@ -368,4 +378,10 @@ def expire_active_reservations(db, redis_cli) -> int:
         if updated:
             _release_reservation(db, redis_cli, updated)
             count += 1
+    if count:
+        try:
+            from app.services.report_service import invalidate
+            invalidate(db, redis_cli)
+        except Exception:
+            pass
     return count

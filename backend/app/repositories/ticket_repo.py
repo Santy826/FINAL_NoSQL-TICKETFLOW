@@ -27,6 +27,13 @@ def find_by_buyer(db, buyer_id: str) -> list[dict]:
     return list(db.boletas.find({"compradorId": buyer_id}))
 
 
+def find_all(db) -> list[dict]:
+    cursor = db.boletas.find({})
+    if hasattr(cursor, "sort"):
+        cursor = cursor.sort("emitidaEn", -1)
+    return list(cursor)
+
+
 def mark_used(db, ticket_id: str, used_at: str) -> dict | None:
     return db.boletas.find_one_and_update(
         {"_id": ticket_id, "estado": "valida"},

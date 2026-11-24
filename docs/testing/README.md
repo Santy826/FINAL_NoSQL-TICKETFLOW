@@ -27,3 +27,23 @@ BASE_URL=http://localhost:8001 k6 run tests/performance/reservation.js
 ```
 
 Nota metodológica: el mismo asiento se envía desde múltiples virtual users. El resultado esperado es exactamente una reserva `201` y el resto `409`; ambos puertos deben compartir MongoDB y Redis. La prueba de rendimiento debe informar número de solicitudes, duración, p95, número de éxitos y conflictos.
+
+## Pruebas del Integrante 4
+
+- caché de reportes: primero se genera un cache miss y después un cache hit;
+- invalidación: la venta, reserva, cancelación o devolución elimina las claves `report:*`;
+- reportes R-01 a R-13 disponibles desde `/api/v1/reports`;
+- frontend: mapa de sillas, temporizador de reserva, mis boletas y panel de reportes;
+- build de producción React ejecutado dentro del contenedor frontend.
+
+Ejecutar las pruebas específicas:
+
+```bash
+docker compose exec api pytest -q tests/unit/test_reports.py
+```
+
+Construir el frontend:
+
+```bash
+docker compose exec frontend npm run build
+```
